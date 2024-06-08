@@ -4,9 +4,7 @@ import threading
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage, LocationMessage
-import requests
-import os
+from linebot.models import MessageEvent, TextMessage, TextSendMessage
 
 app = Flask(__name__)
 
@@ -98,17 +96,14 @@ def callback():
 
 # 處理文字訊息
 @handler.add(MessageEvent, message=TextMessage)
-def handle_text_message(event):
-    user_input = event.message.text.lower()
-    if user_input == "天氣":
-        weather_info = fetch_weather_data("淡水")
-        reply = f"淡水區的天氣是：\n{weather_info}"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
-    elif user_input == "A":
+def handle_message(event):
+    user_message = event.message.text
+    user_id = event.source.user_id  # 获取用户ID
+    if user_message == "A":
         reply_message = "請輸入日期（YYYY-MM-DD）："
-    elif user_input.startswith('日期：'):
-        date = user_input.split('：')[1]
-        events = get_events(event.source.user_id, date)
+    elif user_message.startswith('日期：'):
+        date = user_message.split('：')[1]
+        events = get_events(user_id, date)
         calendar_events = get_calendar_events(date)
         reply_message = "日期 {} 的事件如下：\n".format(date)
         if events:
@@ -120,20 +115,20 @@ def handle_text_message(event):
                 reply_message += "{}\n".format(event[1])
         if not events and not calendar_events:
             reply_message = "日期 {} 沒有任何事件。".format(date)
-    elif user_input == "B":
+    elif user_message == "B":
         reply_message = "請輸入事件標題："
-    elif user_input.startswith('標題：'):
-        title = user_input.split('：')[1]
+    elif user_message.startswith('標題：'):
+        title = user_message.split('：')[1]
         date = input("請輸入日期（YYYY-MM-DD）：")
         time = input("請輸入時間（HH:MM）：")
         location = input("請輸入地點：")
-        add_event(event.source.user_id, title, date, time, location)
+        add_event(user_id, title, date, time, location)
         reply_message = "事件已新增。"
-    elif user_input == "C":
+    elif user_message == "C":
         reply_message = "請輸入要刪除的事件 ID："
-    elif user_input.startswith('ID：'):
-        event_id = user_input.split('：')[1]
-        delete_event(event_id, event.source.user_id)
+    elif user_message.startswith('ID：'):
+        event_id = user_message.split('：')[1]
+        delete_event(event_id, user_id)
         reply_message = "事件已刪除。"
     else:
         reply_message = "請輸入'1'、'2' 或 '3' 來分別啟用'檢視備忘錄'、'新增備忘錄' 或 '刪除備忘錄' 。"
@@ -146,13 +141,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-def fetch_weather_data(city):
-    # 氣象局 API 的 URL
-    url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWA-7A752AE1-2953-4680-A2BA-6B1B13AAB708&format=JSON&StationId=466900"
-
-    try:
-        # 發送 GET 請求
-        response = requests.get(url)
-
-       
