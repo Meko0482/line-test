@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: line
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    pythonVersion: '3.8'  # 或其他适合的 Python 版本
+ 
