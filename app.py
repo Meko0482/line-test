@@ -5,22 +5,25 @@ from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
+import requests
+import logging
 
 app = Flask(__name__)
 
 # LINE Bot 的 Channel Access Token 和 Channel Secret
-line_bot_api = LineBotApi('EVJjdnTQ+p02Btrm/1iTYnFlKcuwbmcSDJSHb2HA/i7DiWMX0zLSito0mejJUmLjafYFdAKduaffBVAq0NIvKsMGLWwggUDdY1tnebNiPf5R9vW9Ns+QJitUTdeVNnNKQCr1VKRDhAJGFZrk3G7nhgdB04t89/1O/w1cDnyilFU=')
-handler = WebhookHandler('e9e71edac68e482a57c9d84c6a1862f3')
+LINE_CHANNEL_ACCESS_TOKEN = 'EVJjdnTQ+p02Btrm/1iTYnFlKcuwbmcSDJSHb2HA/i7DiWMX0zLSito0mejJUmLjafYFdAKduaffBVAq0NIvKsMGLWwggUDdY1tnebNiPf5R9vW9Ns+QJitUTdeVNnNKQCr1VKRDhAJGFZrk3G7nhgdB04t89/1O/w1cDnyilFU='
+LINE_CHANNEL_SECRET = 'e9e71edac68e482a57c9d84c6a1862f3'
 
-# 建立主数据库连接
+line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+handler = WebhookHandler(LINE_CHANNEL_SECRET)
+
+# 建立数据库连接
 conn = sqlite3.connect('calendar.db', check_same_thread=False)
 cursor = conn.cursor()
-
-# 建立行事历数据库连接
 calendar_conn = sqlite3.connect('calendar_events.db', check_same_thread=False)
 calendar_cursor = calendar_conn.cursor()
 
-# 建立备忘录事件表格
+# 建立事件表格
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS events (
         id INTEGER PRIMARY KEY,
@@ -33,7 +36,6 @@ cursor.execute('''
 ''')
 conn.commit()
 
-# 建立行事历事件表格（如果尚未创建）
 calendar_cursor.execute('''
     CREATE TABLE IF NOT EXISTS calendar (
         id INTEGER PRIMARY KEY,
@@ -80,26 +82,52 @@ def check_reminder():
             message = "提醒：今天有 '{}' 行事曆事件".format(event[1])
             line_bot_api.push_message(user[0], TextSendMessage(text=message))
 
-    # 設置計時器，每天檢查一次
-    threading.Timer(86400, check_reminder).start()  # 86400 秒 = 1 天
+    threading.Timer(86400, check_reminder).start()  # 每天檢查一次
 
-# LINE Bot 訊息處理
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
+    app.logger.info("Request body: " + body)
+
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
+
     return 'OK'
 
-# 處理文字訊息
+# 天气查询功能
+def fetch_weather_data(city):
+    url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWA-7A752AE1-2953-4680-A2BA-6B1B13AAB708&format=JSON&StationId=466900"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            if "records" in data and "Station" in data["records"]:
+                station = data["records"]["Station"][0]
+                station_name = station["StationName"]
+                weather_element = station["WeatherElement"]
+                weather = weather_element.get("Weather", "N/A")
+                temperature = weather_element.get("AirTemperature", "N/A")
+                humidity = weather_element.get("RelativeHumidity", "N/A")
+                return f"城市: {station_name}, 天氣: {weather}, 溫度: {temperature}, 濕度: {humidity}"
+            else:
+                return "無法取得天氣資訊。"
+        else:
+            return "無法取得天氣資訊。"
+    except Exception as e:
+        return f"發生錯誤: {e}"
+
+# 处理 LINE Bot 消息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_message = event.message.text
     user_id = event.source.user_id  # 获取用户ID
-    if user_message == "A":
+    if user_message.lower() == "天氣":
+        weather_info = fetch_weather_data("淡水")
+        reply_message = f"淡水區的天氣是：\n{weather_info}"
+    elif user_message == "A":
         reply_message = "請輸入日期（YYYY-MM-DD）："
     elif user_message.startswith('日期：'):
         date = user_message.split('：')[1]
@@ -131,10 +159,9 @@ def handle_message(event):
         delete_event(event_id, user_id)
         reply_message = "事件已刪除。"
     else:
-        reply_message = "請輸入'1'、'2' 或 '3' 來分別啟用'檢視備忘錄'、'新增備忘錄' 或 '刪除備忘錄' 。"
+        reply_message = "請輸入'A'、'B' 或 'C' 來分別啟用'檢視備忘錄'、'新增備忘錄' 或 '刪除備忘錄' 。"
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_message))
 
-# 主程式功能
 def main():
     check_reminder()  # 啟動計時器
     app.run(debug=True)
