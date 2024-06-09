@@ -1,11 +1,11 @@
 import datetime
 import sqlite3
 import threading\
-import requests
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
+import requests
 
 # 建立 Flask 應用
 app = Flask(__name__)
