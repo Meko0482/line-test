@@ -119,6 +119,34 @@ def handle_message(event):
     else:
         reply_message = "請輸入'1'、'2' 或 '3' 來分別啟用'檢視備忘錄'、'新增備忘錄' 或 '刪除備忘錄' 。"
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_message))
+    # 取得天氣資訊
+def fetch_weather_data(city):
+    # 氣象局 API 的 URL
+    url = f"https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWB-7A752AE1-2953-4680-A2BA-6B1B13AAB708&format=JSON&locationName={city}"
+
+    try:
+        # 發送 GET 請求
+        response = requests.get(url)
+
+        # 檢查請求是否成功
+        if response.status_code == 200:
+            # 解析 JSON 回應
+            data = response.json()
+
+            # 提取並返回天氣資料
+            if "records" in data and "location" in data["records"]:
+                location = data["records"]["location"][0]  # 只取第一個城市的資料
+                weather_element = location["weatherElement"]
+                weather = weather_element[0]["elementValue"]
+                temperature = weather_element[1]["elementValue"]
+                humidity = weather_element[5]["elementValue"]
+                return f"天氣狀況: {weather}, 溫度: {temperature}℃, 濕度: {humidity}%"
+            else:
+                return "無法取得天氣資訊。"
+        else:
+            return "無法取得天氣資訊。"
+    except Exception as e:
+        return f"發生錯誤: {e}"
 
 # 主程式功能
 def main():
