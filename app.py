@@ -189,7 +189,7 @@ def fetch_weather_data(city):
             if "records" in data and "location" in data["records"]:
                 location = data["records"]["location"][0]  # 只取第一個城市的資料
                 weather_elements = location["weatherElement"]
-                temperature =temperature = next((item for item in weather_elements if item["elementName"] == "TEMP"), {}).get("elementValue", "N/A")
+                temperature = next((item for item in weather_elements if item["elementName"] == "TEMP"), {}).get("elementValue", "N/A")
                 humidity = next((item for item in weather_elements if item["elementName"] == "HUMD"), {}).get("elementValue", "N/A")
                 return f"城市: {city}, 溫度: {temperature}, 濕度: {humidity}"
             else:
