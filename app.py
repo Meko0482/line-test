@@ -1,10 +1,12 @@
 import sqlite3
 import datetime
 import threading
+import logging
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.models import MessageEvent, TextMessage, TextSendMessage, LocationMessage
+import requests
 
 app = Flask(__name__)
 
@@ -19,6 +21,10 @@ cursor = conn.cursor()
 # 建立行事历数据库连接
 calendar_conn = sqlite3.connect('calendar_events.db', check_same_thread=False)
 calendar_cursor = calendar_conn.cursor()
+
+# LINE Bot API 初始化
+line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 # 新增备忘录事件
 def add_event(username, title, date, time=None, location=None):
@@ -107,6 +113,9 @@ def handle_message(event):
         event_id = user_message.split('：')[1]
         delete_event(event_id, user_id)
         reply_message = "事件已刪除。"
+    elif user_message.lower() == "天氣":
+        weather_info = fetch_weather_data("淡水")
+        reply_message = f"淡水區的天氣是：\n{weather_info}"
     else:
         reply_message = "請輸入'1'、'2' 或 '3' 來分別啟用'檢視備忘錄'、'新增備忘錄' 或 '刪除備忘錄' 。"
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_message))
