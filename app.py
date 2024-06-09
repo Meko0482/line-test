@@ -167,12 +167,14 @@ def handle_message(event):
             reply_message = "請輸入'A'、'B' 或 'C' 來分別啟用'檢視備忘錄'、'新增備忘錄' 或 '刪除備忘錄' 。"
     elif user_message.lower() == "天氣":
         weather_info = fetch_weather_data("淡水")
-        reply_message = f"淡水區的天氣是：\n{weather_info}"
+        reply = f"淡水區的天氣是：\n{weather_info}"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+        return
     else:
         reply_message = "請輸入'A'、'B' 或 'C' 來分別啟用'檢視備忘錄'、'新增備忘錄' 或 '刪除備忘錄' 。"
+    
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_message))
 
-# 查詢天氣資料
 def fetch_weather_data(city):
     # 氣象局 API 的 URL
     url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWA-7A752AE1-2953-4680-A2BA-6B1B13AAB708&format=JSON&StationId=466900"
