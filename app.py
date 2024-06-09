@@ -89,7 +89,6 @@ def check_reminder():
 
 # 用户状态字典
 user_state = {}
-
 # LINE Bot 訊息處理
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -130,8 +129,8 @@ def handle_message(event):
                 reply_message = "日期 {} 沒有任何事件。".format(date)
             user_state.pop(user_id, None)  # 清除用户状态
         else:
-            reply_message = "請輸入'A'、'B'或 'C' 來分別啟用'檢視備忘錄'、'新增備忘錄' 或 '刪除備忘錄' 。"
-elif user_message == "B":
+            reply_message = "請輸入'A'、'B' 或 'C' 來分別啟用'檢視備忘錄'、'新增備忘錄' 或 '刪除備忘錄' 。"
+    elif user_message == "B":
         user_state[user_id] = {"action": "add"}
         reply_message = "請輸入事件標題："
     elif user_message.startswith('標題：'):
@@ -151,10 +150,6 @@ elif user_message == "B":
             user_state[user_id]["location"] = user_message.split('：')[1]
             add_event(user_id, user_state[user_id]["title"], user_state[user_id]["date"], user_state[user_id]["time"], user_state[user_id]["location"])
             reply_message = "事件已新增。"
-            user_state.pop(user_id, None)  # 清除用户状态
-        else:
-            reply_message = "請輸入'A'、'B' 或 'C' 來分別啟用'檢視備忘
-
             user_state.pop(user_id, None)  # 清除用户状态
         else:
             reply_message = "請輸入'A'、'B' 或 'C' 來分別啟用'檢視備忘錄'、'新增備忘錄' 或 '刪除備忘錄' 。"
@@ -194,7 +189,7 @@ def fetch_weather_data(city):
             if "records" in data and "location" in data["records"]:
                 location = data["records"]["location"][0]  # 只取第一個城市的資料
                 weather_elements = location["weatherElement"]
-                temperature = next((item for item in weather_elements if item["elementName"] == "TEMP"), {}).get("elementValue", "N/A")
+                temperature =temperature = next((item for item in weather_elements if item["elementName"] == "TEMP"), {}).get("elementValue", "N/A")
                 humidity = next((item for item in weather_elements if item["elementName"] == "HUMD"), {}).get("elementValue", "N/A")
                 return f"城市: {city}, 溫度: {temperature}, 濕度: {humidity}"
             else:
