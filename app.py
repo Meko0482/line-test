@@ -1,6 +1,7 @@
 import datetime
 import sqlite3
-import threading
+import threading\
+import requests
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
@@ -85,14 +86,22 @@ def handle_message(event):
                 reply += f"{event[0]}. {event[1]} - {event[2]} {event[3]} {event[4]}\n"
         else:
             reply = "沒有任何事件。"
-    elif user_message == '新增事件':
-        reply = "請輸入事件標題："
-        # 在這裡實現新增事件的流程
-        # 可以使用 Line Bot 的 Reply API 來向使用者提問和回覆訊息
-    elif user_message == '刪除事件':
-        reply = "請輸入要刪除的事件 ID："
-        # 在這裡實現刪除事件的流程
-        # 可以使用 Line Bot 的 Reply API 來向使用者提問和回覆訊息
+    elif user_message.startswith('新增事件'):
+        parts = user_message.split(',')
+        if len(parts) == 5:
+            _, title, date, time, location = parts
+            add_event(title.strip(), date.strip(), time.strip(), location.strip())
+            reply = "事件已新增。"
+        else:
+            reply = "新增事件格式錯誤。請使用格式：新增事件, 標題, 日期(YYYY-MM-DD), 時間(HH:MM), 地點"
+    elif user_message.startswith('刪除事件'):
+        parts = user_message.split(',')
+        if len(parts) == 2:
+            _, event_id = parts
+            delete_event(event_id.strip())
+            reply = "事件已刪除。"
+        else:
+            reply = "刪除事件格式錯誤。請使用格式：刪除事件, 事件ID"
     elif event.message.text.lower() == "天氣":
         weather_info = fetch_weather_data("淡水")
         reply = f"淡水區的天氣是：\n{weather_info}"
@@ -128,5 +137,8 @@ def fetch_weather_data(city):
             return "無法取得天氣資訊。"
     except Exception as e:
         return f"發生錯誤: {e}"
+
 if __name__ == "__main__":
+    # 在啟動伺服器之前，啟動檢查提醒功能
+    check_reminder()
     app.run()
