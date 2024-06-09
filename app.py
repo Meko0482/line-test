@@ -93,7 +93,7 @@ def handle_message(event):
             add_event(title.strip(), date.strip(), time.strip(), location.strip())
             reply = "事件已新增。"
         else:
-            reply = "新增事件格式錯誤。請使用格式：新增事件, 標題, 日期(YYYY-MM-DD), 時間(HH:MM), 地點"
+            reply = "新增事件格式錯誤。請使用格式：新增事件, 標題, 日期(YYYY-MM-DD), 時間(HH:MM), 地點 。 例如:新增事件, 出門, 2024-05-27, 09:20, 嘉義"
     elif user_message.startswith('刪除事件'):
         parts = user_message.split(',')
         if len(parts) == 2:
@@ -101,7 +101,7 @@ def handle_message(event):
             delete_event(event_id.strip())
             reply = "事件已刪除。"
         else:
-            reply = "刪除事件格式錯誤。請使用格式：刪除事件, 事件ID"
+            reply = "刪除事件格式錯誤。請使用格式：刪除事件, 事件ID 。 例如:刪除事件, 1"
     elif event.message.text.lower() == "天氣":
         weather_info = fetch_weather_data("淡水")
         reply = f"淡水區的天氣是：\n{weather_info}"
