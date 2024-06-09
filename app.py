@@ -122,7 +122,7 @@ def handle_message(event):
     # 取得天氣資訊
 def fetch_weather_data(city):
     # 氣象局 API 的 URL
-    url = f"https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWB-7A752AE1-2953-4680-A2BA-6B1B13AAB708&format=JSON&locationName={city}"
+    url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWA-7A752AE1-2953-4680-A2BA-6B1B13AAB708&format=JSON&StationId=466900"
 
     try:
         # 發送 GET 請求
