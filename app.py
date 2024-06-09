@@ -2,6 +2,7 @@ import datetime
 import sqlite3
 import threading
 import logging
+import requests
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
